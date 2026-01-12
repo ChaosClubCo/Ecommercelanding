@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ProductCard } from "../components/products/ProductCard";
 import { Product } from "../../types";
-import { PRODUCTS } from "../../data/mockData";
+import { fetchProducts } from "../../data/mockData";
 import { Button } from "../components/ui/button";
 import { Slider } from "../components/ui/slider";
 import { Checkbox } from "../components/ui/checkbox";
@@ -13,16 +13,35 @@ interface ShopPageProps {
 }
 
 export function ShopPage({ onAddToCart, onViewDetails }: ShopPageProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+
+  useEffect(() => {
+    async function loadProducts() {
+      const data = await fetchProducts();
+      setProducts(data);
+      setLoading(false);
+    }
+    loadProducts();
+  }, []);
   
-  const categories = Array.from(new Set(PRODUCTS.map(p => p.category)));
+  const categories = Array.from(new Set(products.map(p => p.category)));
   
-  const filteredProducts = PRODUCTS.filter(p => {
+  const filteredProducts = products.filter(p => {
     const matchesCategory = selectedCategory ? p.category === selectedCategory : true;
     const matchesPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
     return matchesCategory && matchesPrice;
   });
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center">
+        <p className="text-gray-500">Loading products...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

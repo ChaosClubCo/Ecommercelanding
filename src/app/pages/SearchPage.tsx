@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Product } from "../../types";
-import { PRODUCTS } from "../../data/mockData";
+import { fetchProducts } from "../../data/mockData";
 import { ProductCard } from "../components/products/ProductCard";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
@@ -18,15 +18,26 @@ interface SearchPageProps {
 type SortOption = 'relevance' | 'price-low' | 'price-high' | 'rating' | 'name';
 
 export function SearchPage({ initialQuery = "", onAddToCart, onViewDetails, onNavigate }: SearchPageProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  const categories = ['all', ...Array.from(new Set(PRODUCTS.map(p => p.category)))];
+  useEffect(() => {
+    async function loadProducts() {
+      const data = await fetchProducts();
+      setProducts(data);
+      setLoading(false);
+    }
+    loadProducts();
+  }, []);
+
+  const categories = ['all', ...Array.from(new Set(products.map(p => p.category)))];
 
   // Search and filter logic
   const filteredAndSortedProducts = useMemo(() => {
-    let results = PRODUCTS;
+    let results = products;
 
     // Apply search filter
     if (searchQuery.trim()) {

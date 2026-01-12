@@ -7,17 +7,21 @@ import { CartPage } from './pages/CartPage';
 import { AuthPage } from './pages/AuthPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { SearchPage } from './pages/SearchPage';
+import { CheckoutPage } from './pages/CheckoutPage';
+import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
 import { Product } from '../types';
 import { Toaster } from 'sonner';
 import { CartProvider, useCart } from '../contexts/CartContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Router Types
-type Page = 'home' | 'shop' | 'cart' | 'checkout' | 'account' | 'about' | 'contact' | 'product-detail' | 'search';
+type Page = 'home' | 'shop' | 'cart' | 'checkout' | 'account' | 'about' | 'contact' | 'product-detail' | 'search' | 'order-confirmation';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [orderNumber, setOrderNumber] = useState<string>('');
   
   const { cart, cartCount, addToCart, updateQuantity, removeFromCart } = useCart();
 
@@ -30,6 +34,12 @@ function AppContent() {
   // Search handler
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+  };
+
+  // Order completion handler
+  const handleOrderComplete = (orderNum: string) => {
+    setOrderNumber(orderNum);
+    navigate('order-confirmation');
   };
 
   // View Logic
@@ -89,16 +99,10 @@ function AppContent() {
         );
       case 'checkout':
         return (
-          <div className="container mx-auto px-4 py-20 text-center">
-            <h1 className="text-3xl font-bold mb-4">Checkout</h1>
-            <p className="text-gray-500">Checkout functionality would be implemented here with Stripe/Payment integration.</p>
-            <button 
-              className="mt-8 text-blue-600 hover:underline"
-              onClick={() => navigate("shop")}
-            >
-              Back to Shop
-            </button>
-          </div>
+          <CheckoutPage 
+            onOrderComplete={handleOrderComplete}
+            onNavigate={navigate}
+          />
         );
       case 'account':
         return <AuthPage onNavigate={navigate} />;
@@ -112,6 +116,13 @@ function AppContent() {
               setSelectedProduct(p);
               navigate('product-detail');
             }}
+          />
+        );
+      case 'order-confirmation':
+        return (
+          <OrderConfirmationPage 
+            orderNumber={orderNumber}
+            onNavigate={navigate}
           />
         );
       default:
@@ -145,7 +156,9 @@ function AppContent() {
 function App() {
   return (
     <CartProvider>
-      <AppContent />
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
     </CartProvider>
   );
 }

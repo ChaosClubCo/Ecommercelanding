@@ -1,6 +1,8 @@
 import { Product } from "../types";
+import { projectId, publicAnonKey } from "/utils/supabase/info";
 
-export const PRODUCTS: Product[] = [
+// Mock data as fallback
+const MOCK_PRODUCTS: Product[] = [
   {
     id: "1",
     name: "Premium Wireless Headphones",
@@ -62,3 +64,39 @@ export const PRODUCTS: Product[] = [
     reviewCount: 15
   }
 ];
+
+// Fetch products from API with fallback to mock data
+export async function fetchProducts(): Promise<Product[]> {
+  try {
+    const response = await fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-f0d6b019/products`,
+      {
+        headers: {
+          'Authorization': `Bearer ${publicAnonKey}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      console.warn(`⚠️ API returned ${response.status}, using mock data`);
+      return MOCK_PRODUCTS;
+    }
+    
+    const data = await response.json();
+    
+    // If API returns empty array, use mock data
+    if (!data || data.length === 0) {
+      console.log('📦 No products in database, using mock data');
+      return MOCK_PRODUCTS;
+    }
+    
+    console.log(`✅ Loaded ${data.length} products from database`);
+    return data;
+  } catch (error) {
+    console.warn('⚠️ Failed to fetch from API, using mock data:', error);
+    return MOCK_PRODUCTS;
+  }
+}
+
+// Export mock data for backward compatibility
+export const PRODUCTS = MOCK_PRODUCTS;

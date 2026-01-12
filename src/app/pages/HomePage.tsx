@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { ProductCard } from "../components/products/ProductCard";
 import { Product } from "../../types";
-import { PRODUCTS } from "../../data/mockData";
+import { fetchProducts } from "../../data/mockData";
 import { motion } from "framer-motion";
 
 interface HomePageProps {
@@ -12,7 +12,19 @@ interface HomePageProps {
 }
 
 export function HomePage({ onNavigate, onAddToCart, onViewDetails }: HomePageProps) {
-  const featuredProducts = PRODUCTS.slice(0, 4);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProducts() {
+      const data = await fetchProducts();
+      setProducts(data);
+      setLoading(false);
+    }
+    loadProducts();
+  }, []);
+
+  const featuredProducts = products.slice(0, 4);
 
   return (
     <div className="flex flex-col min-h-screen">
