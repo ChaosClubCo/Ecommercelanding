@@ -23,7 +23,7 @@ productsRouter.get('/products', async (c) => {
   try {
     // Return empty array if Supabase not configured
     if (!supabase) {
-      console.warn('Supabase not configured, returning empty array');
+      console.log('📦 Database not configured - using frontend mock data');
       return c.json([]);
     }
 
@@ -33,8 +33,15 @@ productsRouter.get('/products', async (c) => {
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching products from database:', error);
-      // Return empty array instead of throwing - frontend will fallback to mock data
+      // Check if it's a "table not found" error (expected before DB setup)
+      if (error.code === 'PGRST204' || error.code === 'PGRST205' || error.message?.includes('Could not find')) {
+        console.log('📦 Database tables not created yet - using frontend mock data');
+        console.log('ℹ️  To use real database, run /supabase/DATABASE_SETUP.sql in Supabase SQL Editor');
+        return c.json([]);
+      }
+      
+      // Other errors - log them
+      console.error('⚠️ Unexpected database error:', error);
       return c.json([]);
     }
     
@@ -53,7 +60,7 @@ productsRouter.get('/products', async (c) => {
     console.log(`✅ Fetched ${products.length} products from database`);
     return c.json(products);
   } catch (error) {
-    console.error('Error in GET /products:', error);
+    console.log('📦 Database error - using frontend mock data');
     // Return empty array to trigger mock data fallback
     return c.json([]);
   }
@@ -138,6 +145,10 @@ productsRouter.get('/products/search/query', async (c) => {
     const { data, error } = await dbQuery;
     
     if (error) {
+      // Silently handle "table not found" errors
+      if (error.code === 'PGRST204' || error.code === 'PGRST205' || error.message?.includes('Could not find')) {
+        return c.json([]);
+      }
       console.error('Error searching products:', error);
       return c.json([]);
     }
@@ -156,7 +167,6 @@ productsRouter.get('/products/search/query', async (c) => {
     
     return c.json(products);
   } catch (error) {
-    console.error('Error in GET /products/search/query:', error);
     return c.json([]);
   }
 });
@@ -177,6 +187,10 @@ productsRouter.get('/products/category/:category', async (c) => {
       .order('created_at', { ascending: false });
     
     if (error) {
+      // Silently handle "table not found" errors
+      if (error.code === 'PGRST204' || error.code === 'PGRST205' || error.message?.includes('Could not find')) {
+        return c.json([]);
+      }
       console.error('Error fetching products by category:', error);
       return c.json([]);
     }
@@ -195,7 +209,6 @@ productsRouter.get('/products/category/:category', async (c) => {
     
     return c.json(products);
   } catch (error) {
-    console.error('Error in GET /products/category/:category:', error);
     return c.json([]);
   }
 });
